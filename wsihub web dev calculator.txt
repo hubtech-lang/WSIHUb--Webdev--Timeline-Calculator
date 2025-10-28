@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WSI Hub - Web Dev Timeline Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  body{font-family:'Inter',sans-serif;background:#fff;color:#222;max-width:900px;margin:40px auto;padding:20px;}
+  header{text-align:center;margin-bottom:25px;}
+  img.logo{width:220px;margin-bottom:10px;}
+  h1{color:#0b57d0;margin-bottom:0;font-size:1.6rem;}
+  label{font-weight:600;display:block;margin-top:15px;}
+  input,select,button{padding:8px;margin-top:5px;width:100%;border:1px solid #ccc;border-radius:6px;}
+  button{background:#0b57d0;color:#fff;border:none;cursor:pointer;margin-top:20px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;margin-top:25px;}
+  th,td{border:1px solid #ddd;padding:10px;text-align:left;}
+  th{background:#e7eef9;}
+  #downloadBtn{background:#093c99;margin-top:15px;}
+  footer{text-align:center;margin-top:30px;font-size:0.85rem;color:#555;}
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="https://drive.google.com/uc?export=view&id=1J9X92XuqUx6BheYrFjZ-IyQOGnOJPIUw" alt="WSI Hub Logo">
+  <h1>WSI Hub - Web Dev Timeline Calculator</h1>
+  <p>Automatic timeline generator for Hub projects</p>
+</header>
+
+<label>Project Start Date</label>
+<input type="date" id="startDate">
+
+<label>Include Content Writing?</label>
+<select id="contentWriting">
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
+
+<label>Number of Pages</label>
+<select id="pages">
+  <option value="10">10</option>
+  <option value="15">15</option>
+  <option value="20">20</option>
+</select>
+
+<button onclick="calculateTimeline()">Calculate Timeline</button>
+
+<div id="output"></div>
+
+<button id="downloadBtn" style="display:none;" onclick="downloadPDF()">Download as PDF</button>
+
+<footer>© WSI Hub</footer>
+
+<script>
+// helper to add business days
+function addBusinessDays(date, days){
+  let result = new Date(date);
+  let added = 0;
+  while(added < days){
+    result.setDate(result.getDate() + 1);
+    const day = result.getDay();
+    if(day !== 0 && day !== 6) added++;
+  }
+  return result;
+}
+function formatDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+
+function calculateTimeline(){
+  const start = new Date(document.getElementById('startDate').value);
+  const content = document.getElementById('contentWriting').value;
+  const pages = parseInt(document.getElementById('pages').value);
+  if(isNaN(start)){alert("Please select a start date.");return;}
+  let m=[];
+  let d=start;
+  //1 Homepage
+  d=addBusinessDays(d, content==='yes'?7:5); m.push(['Homepage Mock-ups',d]);
+  //2 client feedback1
+  d=addBusinessDays(d,2); m.push(['Client Feedback (Round 1)',d]);
+  //3 hub rev1
+  d=addBusinessDays(d,2); m.push(['Hub Revisions (Round 1)',d]);
+  //4 client feedback2
+  d=addBusinessDays(d,2); m.push(['Client Feedback (Round 2)',d]);
+  //5 hub rev2
+  d=addBusinessDays(d,2); m.push(['Hub Revisions (Round 2)',d]);
+  //6 signoff mockup
+  d=addBusinessDays(d,1); m.push(['Client Sign-off on Mock-ups',d]);
+  //7 staging
+  let stageDays=7;
+  if(content==='yes'){
+    if(pages>15) stageDays=15; else stageDays=10;
+  } else {
+    if(pages>15) stageDays=10; else stageDays=7;
+  }
+  d=addBusinessDays(d,stageDays); m.push(['Staging Build Complete',d]);
+  //8 feedback stage1
+  d=addBusinessDays(d,3); m.push(['Client Feedback (Staging Round 1)',d]);
+  //9 hub rev stage1
+  d=addBusinessDays(d,3); m.push(['Hub Revisions (Staging Round 1)',d]);
+  //10 feedback stage2
+  d=addBusinessDays(d,2); m.push(['Client Feedback (Staging Round 2)',d]);
+  //11 hub rev stage2
+  d=addBusinessDays(d,2); m.push(['Hub Revisions (Staging Round 2)',d]);
+  //12 signoff final
+  d=addBusinessDays(d,1); m.push(['Client Sign-off on Final Website',d]);
+  //13 launch
+  d=addBusinessDays(d,5); m.push(['Launch + QA Complete',d]);
+
+  let html="<table><tr><th>Phase</th><th>Due Date</th></tr>";
+  m.forEach(x=>html+=`<tr><td>${x[0]}</td><td>${formatDate(x[1])}</td></tr>`);
+  html+="</table>";
+  document.getElementById('output').innerHTML=html;
+  document.getElementById('downloadBtn').style.display='block';
+}
+
+function downloadPDF(){
+  const element = document.body;
+  const opt = {
+    margin: 0.3,
+    filename: 'WSI-Hub-Timeline.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, scrollY: 0 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+</script>
+
+</body>
+</html>
